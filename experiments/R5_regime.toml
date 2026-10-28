@@ -1,0 +1,39 @@
+# R5 - is there a regime where the norm bound fails and BurstGuard still helps?
+# 40 rounds, head, seed 0: 2 or 6 attackers (10 % / 30 %), 20 % or 50 % poisoned windows, model replacement
+# (clipped to the bound = the strongest norm-bounded attacker), norm bound vs norm bound + calibrated BurstGuard;
+# plus plain poisoning in the strongest regime (6 attackers, 50 %).
+[grid]
+name = "R5_regime"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive", "R6_online_calibration", "R4_baselines", "R9_modes", "R7_out_of_family", "R8_regroup"]
+seeds = [0]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+"fl.rounds" = 40
+"fl.eval_every" = 5
+
+[factors]
+"defense.name" = ["normbound", "normbound_burstguard"]
+"attack.num_malicious" = [2, 6]
+"attack.poison_frac" = [0.2, 0.5]
+"attack.type" = ["scale"]
+"attack.boost" = [0.0]
+
+[[include]]
+"defense.name" = "normbound"
+"attack.num_malicious" = 6
+"attack.poison_frac" = 0.5
+"attack.type" = "poison"
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.num_malicious" = 6
+"attack.poison_frac" = 0.5
+"attack.type" = "poison"
+
+[analysis]
+split = "test"

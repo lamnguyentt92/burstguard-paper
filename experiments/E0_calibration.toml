@@ -1,0 +1,18 @@
+# E0 - BurstGuard calibration on CLEAN federations (monitor mode: score every round, never reject).
+# Output: score distribution of clean rounds -> `burstguard calibrate experiments/E0_calibration.toml`
+# gives the threshold for a target false-positive rate; also measures the screening cost per round.
+[grid]
+name = "E0_calibration"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"attack.type" = "none"
+"defense.name" = "burstguard"
+"burstguard.mode" = "monitor"
+
+[factors]
+"train.peft" = ["head", "decoder", "lora", "full"]
+
+[analysis]
+split = "test"

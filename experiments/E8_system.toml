@@ -1,0 +1,20 @@
+# E8 - system cost in the Flower engine (RQ4): real SecAgg+ protocol, round time and server-side defense cost.
+# Run on ONE machine (timings are not comparable across VMs). Multi-VM deployment comes in a later version.
+[grid]
+name = "E8_system"
+base_config = "configs/base.toml"
+seeds = [0]
+
+[fixed]
+"engine.name" = "flower"
+"fl.rounds" = 5
+"fl.eval_every" = 5
+"attack.type" = "none"
+
+[factors]
+"secagg.enabled" = [false, true]
+"defense.name" = ["fedavg", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[analysis]
+split = "test"

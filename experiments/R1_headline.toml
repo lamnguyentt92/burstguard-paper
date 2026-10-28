@@ -1,0 +1,89 @@
+# R1 - headline configurations re-run in ONE release (v0.3.12) with more seeds, the new
+# natural-window and capacity-shortfall metrics and paired probe-set shadows.
+# Calibrated BurstGuard = X8 (threshold 0.031 / 0.14, fixed anchor, sqrt(G) regroup thresholds).
+#   head: FedAvg and BurstGuard x {clean, model replacement (boost n/m), boost 3, plain poisoning}, seeds 0-4
+#         (BurstGuard vs model replacement: seeds 0-2);
+#         BurstGuard clean runs on held-out seeds 3-7 (thresholds were calibrated on E3 clean seeds 0-2).
+#   LoRA: seed 2 for the attacked configurations (seeds 0-1 exist from X8 / E3), BurstGuard clean seed 4
+#         (clean seed 2 is in X8, a 60-round clean run on seed 3 in R2).
+# Shadows (log only, same aggregate every round): probes from another period (holiday split of the probe areas),
+# from SMS traffic, 8 and 16 probe windows (|P| = 64 is in E9). Thresholds for the shadows are
+# calibrated offline on the clean runs (leave-one-seed-out) and replayed on the attacked runs.
+[grid]
+name = "R1_headline"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost"]
+seeds = [0, 1, 2, 3, 4, 5, 6, 7]
+
+[fixed]
+"train.peft" = "head"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.shadow" = [
+  {name = "holiday", probe_split = "holiday"},
+  {name = "sms", probe_data = "shared:data/processed/milan_sms_d1.npz", rel_floor = 0.1},
+  {name = "p8", probe_windows = 8},
+  {name = "p16", probe_windows = 16},
+]
+
+[factors]
+"defense.name" = ["fedavg", "burstguard"]
+"attack.type" = ["none", "scale", "poison"]
+"attack.boost" = [0.0, 3.0]
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]
+"attack.type" = "poison"
+"attack.boost" = 3.0
+[[exclude]]                 # attacked runs: seeds 0-4
+"attack.type" = {in = ["scale", "poison"]}
+"run.seed" = {in = [5, 6, 7]}
+[[exclude]]                 # BurstGuard vs model replacement (always flagged in round 1): seeds 0-2
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"run.seed" = {in = [3, 4]}
+[[exclude]]                 # FedAvg clean: seeds 0-2
+"defense.name" = "fedavg"
+"attack.type" = "none"
+"run.seed" = {in = [3, 4, 5, 6, 7]}
+[[exclude]]                 # BurstGuard clean: held-out seeds 3-7 only
+"defense.name" = "burstguard"
+"attack.type" = "none"
+"run.seed" = {in = [0, 1, 2]}
+
+# LoRA
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "fedavg"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [2]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "fedavg"
+"attack.type" = "poison"
+_seeds = [2]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [2]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+_seeds = [2]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"attack.type" = "none"
+_seeds = [4]
+
+[analysis]
+split = "test"

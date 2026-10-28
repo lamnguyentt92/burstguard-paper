@@ -1,0 +1,32 @@
+# X1 - generalisation to other traffic types (RQ1 on SMS and call activity of the same Milan files, same site and
+# probe blocks): federated fine-tuning (head, LoRA; 2 seeds) vs. local-only and centralised fine-tuning (head;
+# 2 seeds) and TTM zero-shot. Internet traffic = E1_clean. Data: burstguard data prepare --activity sms,call
+[grid]
+name = "X1_traffic_clean"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[factors]
+"data.path" = ["shared:data/processed/milan_sms_d1.npz", "shared:data/processed/milan_call_d1.npz"]
+"train.peft" = ["head", "lora"]
+"job.kind" = ["fl", "local_only", "centralized"]
+
+[[exclude]]                 # baselines with head only
+"job.kind" = "local_only"
+"train.peft" = "lora"
+[[exclude]]
+"job.kind" = "centralized"
+"train.peft" = "lora"
+
+[[include]]
+"data.path" = "shared:data/processed/milan_sms_d1.npz"
+"job.kind" = "zeroshot"
+[[include]]
+"data.path" = "shared:data/processed/milan_call_d1.npz"
+"job.kind" = "zeroshot"
+[[exclude]]                 # zero-shot is deterministic: one run
+"job.kind" = "zeroshot"
+"run.seed" = 1
+
+[analysis]
+split = "test"

@@ -1,0 +1,59 @@
+# R14 (v0.3.15) - the out-of-family offset trigger with a search window that covers it.
+# v0.3.12 R7: a burst ending 144 slots (one day) before the forecast origin lies outside the default window W = 6:
+# gamma 3 -> 2/40 rounds flagged, UPR 0.46 (= FedAvg). The R7 shadow screens showed that a wider window raises the
+# score of these aggregates 15-20x (median S_anc 0.05 -> 1.0 at W = 150), but there were no clean runs to set
+# thresholds for a wider window. Here W = 150 (covers the offset 144 + width 3) is the deployed window, and the
+# thresholds come from the public calibration with the SAME window (recommended configuration of R13: public-only
+# thresholds over the horizon, sqrt(G) x cap for the groups, regroup verification), so no extra calibration is needed.
+# Rows: offset-144 trigger (gamma 3 seeds 0-1, gamma 10, poisoning), the default trigger (no loss from the wider
+# window), clean runs (false alarms), and W = 6 under the same calibration (reference).
+[grid]
+name = "R14_offset_window"
+base_config = "configs/base.toml"
+seeds = [0]
+
+[fixed]
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+"burstguard.width_max" = 150
+
+# --- offset-144 trigger
+[[include]]
+"trigger.offset" = 144
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"trigger.offset" = 144
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[include]]
+"trigger.offset" = 144
+"attack.type" = "poison"
+# --- default trigger (offset 0): no loss from the wider window
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[include]]
+"attack.type" = "poison"
+# --- false alarms
+[[include]]
+"attack.type" = "none"
+_seeds = [0, 1, 2]
+# --- reference: default window W = 6 under the same public calibration
+[[include]]
+"burstguard.width_max" = 6
+"trigger.offset" = 144
+"attack.type" = "scale"
+"attack.boost" = 3.0
+
+[analysis]
+split = "test"

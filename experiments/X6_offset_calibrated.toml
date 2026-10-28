@@ -1,0 +1,73 @@
+# X6 - triggers outside the screened window, follow-up of X3 with a CALIBRATED wide window (RQ3, adaptive attacker).
+# X3 (v0.3.7): width_max = 18 restores detection for model replacement and for LoRA / covert at offset 12, but the
+# covert head attacker at offset 12 still passes (TPR 0.05, UPR 0.47): the default thresholds were set for W = 6.
+# With W = 18 the attacker's per-round score is 0.06-0.10 (clean <= 0.033) - below the 0.08 floor - and the
+# adaptive anchor threshold (median + 5 MAD of the accepted scores) follows the slow ramp of the poisoned model
+# (anchor score 0.10 -> 0.66 over 20 rounds without a flag).
+# Defender's answer = the deployment procedure used for SMS / call (X4 -> X5): recalibrate the thresholds for the new
+# window on clean rounds and use the fixed anchor rule:
+#   burstguard calibrate experiments/X3_trigger_offset.toml --where burstguard.width_max=18 --where attack.type=none
+#   (X3 clean, W = 18: head seeds 0-2, LoRA seed 0; largest clean S_last 0.0331, S_anchor 0.1022; margin 1.5)
+#   -> threshold = 0.05, threshold_anchor = 0.153 (fixed); replayed in-sample false-positive rate 0
+# and sqrt(G)-scaled thresholds for the units of a regroup (see X5). Clean runs: held-out seeds (head 3, 4; LoRA 3).
+# Attacked: offset 0 / 12 x boost n/m / 3, head seeds 0-2; LoRA covert at offset 12, seed 0 (as in X3).
+[grid]
+name = "X6_offset_calibrated"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2, 3, 4]
+
+[fixed]
+"defense.name" = "burstguard"
+"burstguard.width_max" = 18
+"burstguard.threshold" = 0.05
+"burstguard.threshold_anchor" = 0.153
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+
+[factors]
+"train.peft" = ["head", "lora"]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]          # 0 = n/m (model replacement), 3 = covert
+"trigger.offset" = [0, 12]           # slots between the end of the burst and the end of the context
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]                 # without an attack the trigger offset only changes the evaluation windows
+"attack.type" = "none"
+"trigger.offset" = 12
+[[exclude]]                 # clean runs: held-out seeds 3, 4
+"attack.type" = "none"
+"run.seed" = 0
+[[exclude]]
+"attack.type" = "none"
+"run.seed" = 1
+[[exclude]]
+"attack.type" = "none"
+"run.seed" = 2
+[[exclude]]                 # attacked runs: seeds 0-2
+"attack.type" = "scale"
+"run.seed" = 3
+[[exclude]]
+"attack.type" = "scale"
+"run.seed" = 4
+[[exclude]]                 # LoRA: attacked seed 0 (covert, offset 12), clean seed 3
+"train.peft" = "lora"
+"run.seed" = 1
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 2
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 4
+[[exclude]]
+"train.peft" = "lora"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[exclude]]
+"train.peft" = "lora"
+"attack.type" = "scale"
+"trigger.offset" = 0
+
+[analysis]
+split = "test"

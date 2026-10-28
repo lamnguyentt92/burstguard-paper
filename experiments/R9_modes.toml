@@ -1,0 +1,61 @@
+# R9 - decoder and full fine-tuning defended with PER-MODE calibrated thresholds:
+# 1.5 x the E0 clean maxima (decoder S_last 0.034 / S_anc 0.099; full 0.050 / 0.122). Seed 0 attacked, clean on the
+# held-out seed 2 (E0 used seeds 0-1). Undefended references: E2 (model replacement) and the clean run.
+[grid]
+name = "R9_modes"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive", "R6_online_calibration", "R4_baselines"]
+seeds = [0]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+
+
+# decoder: per-mode thresholds = 1.5 x E0 clean maxima
+[[include]]
+"train.peft" = "decoder"
+"burstguard.threshold" = 0.051
+"burstguard.threshold_anchor" = 0.148
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"train.peft" = "decoder"
+"burstguard.threshold" = 0.051
+"burstguard.threshold_anchor" = 0.148
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "decoder"
+"burstguard.threshold" = 0.051
+"burstguard.threshold_anchor" = 0.148
+"defense.name" = "burstguard"
+"attack.type" = "none"
+_seeds = [2]
+[[include]]
+"train.peft" = "full"
+"burstguard.threshold" = 0.075
+"burstguard.threshold_anchor" = 0.183
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"train.peft" = "full"
+"burstguard.threshold" = 0.075
+"burstguard.threshold_anchor" = 0.183
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "full"
+"burstguard.threshold" = 0.075
+"burstguard.threshold_anchor" = 0.183
+"defense.name" = "burstguard"
+"attack.type" = "none"
+_seeds = [2]

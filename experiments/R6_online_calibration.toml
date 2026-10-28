@@ -1,0 +1,131 @@
+# R6 - what an operator can do: calibrate on the first k in {3, 5, 10} rounds of the SAME run
+# (thresholds = beta x largest score of those rounds, beta in {1.2, 1.5, 2}), then enforce; the attack starts at round
+# k + 1. Head: clean seeds 0-2, attacked seeds 0-1 (beta 1.2 / 2: seed 0); LoRA seed 0 (k = 10; with k = 5 the
+# E3 replay already gives false positives). Sensitivity to |P| comes from the p16 / p64 shadows of R1.
+[grid]
+name = "R6_online_calibration"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive"]
+seeds = [0, 1, 2]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+
+# k = 3, beta = 1.5
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 3
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "none"
+"attack.start_round" = 4
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 3
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "scale"
+"attack.start_round" = 4
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 3
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "poison"
+"attack.start_round" = 4
+_seeds = [0, 1]
+# k = 5, beta = 1.5
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "none"
+"attack.start_round" = 6
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "scale"
+"attack.start_round" = 6
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "poison"
+"attack.start_round" = 6
+_seeds = [0, 1]
+# k = 10, beta = 1.5
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "none"
+"attack.start_round" = 11
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "scale"
+"attack.start_round" = 11
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "poison"
+"attack.start_round" = 11
+_seeds = [0, 1]
+# k = 5, beta = 1.2
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.2
+"attack.type" = "none"
+"attack.start_round" = 6
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.2
+"attack.type" = "poison"
+"attack.start_round" = 6
+_seeds = [0]
+# k = 5, beta = 2.0
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 2.0
+"attack.type" = "none"
+"attack.start_round" = 6
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 2.0
+"attack.type" = "poison"
+"attack.start_round" = 6
+_seeds = [0]
+# LoRA, seed 0
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "none"
+"attack.start_round" = 11
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_margin" = 1.5
+"attack.type" = "scale"
+"attack.start_round" = 11
+_seeds = [0]
+"attack.boost" = 3.0

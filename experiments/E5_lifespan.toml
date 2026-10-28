@@ -1,0 +1,25 @@
+# E5 - backdoor lifespan (RQ2): attack only in rounds 6-15 of 40; L50 = rounds after the attack until
+# validation ASR drops below half of its peak. Head and LoRA, 2 seeds.
+[grid]
+name = "E5_lifespan"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"attack.type" = "scale"
+"attack.start_round" = 6
+"attack.end_round" = 16
+"fl.rounds" = 40
+"fl.eval_every" = 2
+"defense.noise_multiplier" = 0.1
+
+[factors]
+"train.peft" = ["head", "lora"]
+"defense.name" = ["fedavg", "clip_noise", "lora_reset", "burstguard"]
+
+[[exclude]]
+"defense.name" = "lora_reset"
+"train.peft" = "head"
+
+[analysis]
+split = "test"

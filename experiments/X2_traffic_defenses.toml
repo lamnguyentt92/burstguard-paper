@@ -1,0 +1,36 @@
+# X2 - generalisation to other traffic types (RQ2/RQ3 on SMS and call activity): no attack, model replacement
+# (boost n/m = 10) and the covert attacker (boost 3) against FedAvg, Median (needs individual updates), the
+# probe-loss check and BurstGuard (both work on the aggregate only, i.e. with secure aggregation).
+# Head: 2 seeds. LoRA: seed 0, FedAvg / probe-loss check / BurstGuard only. Internet traffic = E2/E3.
+[grid]
+name = "X2_traffic_defenses"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"defense.krum_f" = 2
+
+[factors]
+"data.path" = ["shared:data/processed/milan_sms_d1.npz", "shared:data/processed/milan_call_d1.npz"]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]          # 0 = n/m (model replacement), 3 = covert
+"defense.name" = ["fedavg", "median", "probe_screen", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]                 # LoRA: one seed, aggregate-level defenses + FedAvg
+"train.peft" = "lora"
+"run.seed" = 1
+[[exclude]]
+"train.peft" = "lora"
+"defense.name" = "median"
+[[exclude]]                 # LoRA clean: FedAvg (accuracy) and BurstGuard (false positives) only
+"train.peft" = "lora"
+"attack.type" = "none"
+"defense.name" = "probe_screen"
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

@@ -1,0 +1,44 @@
+# E1 - accuracy without attacks (RQ1 baseline): federated fine-tuning in 4 modes (3 seeds) vs. local-only and
+# centralised fine-tuning (head and LoRA, 2 seeds), plus TTM zero-shot. Seasonal-naive MASE = 1 by definition.
+# The FL runs are also the clean reference of E2 (E2 has no attack-free runs since v0.3.4).
+[grid]
+name = "E1_clean"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+
+[factors]
+"train.peft" = ["head", "decoder", "lora", "full"]
+"job.kind" = ["fl", "local_only", "centralized"]
+
+# baselines: head and LoRA only, seeds 0-1
+[[exclude]]
+"job.kind" = "local_only"
+"train.peft" = "decoder"
+[[exclude]]
+"job.kind" = "local_only"
+"train.peft" = "full"
+[[exclude]]
+"job.kind" = "centralized"
+"train.peft" = "decoder"
+[[exclude]]
+"job.kind" = "centralized"
+"train.peft" = "full"
+[[exclude]]
+"job.kind" = "local_only"
+"run.seed" = 2
+[[exclude]]
+"job.kind" = "centralized"
+"run.seed" = 2
+
+[[include]]
+"job.kind" = "zeroshot"
+[[exclude]]                 # zero-shot is deterministic: one run
+"job.kind" = "zeroshot"
+"run.seed" = 1
+[[exclude]]
+"job.kind" = "zeroshot"
+"run.seed" = 2
+
+[analysis]
+split = "test"
+reference = { "job.kind" = "centralized" }

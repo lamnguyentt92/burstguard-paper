@@ -1,0 +1,206 @@
+# R12 (v0.3.13) - many attackers vs. regroup verification (weakness 3 of v0.3.12).
+# v0.3.12 R5: with 6 of 20 attackers (30 %) the verified norm bound leaves UPR ~0.05 (6x clean); BurstGuard on top
+# flags 28-29 of 40 rounds, but its regroup keeps a malicious group in every one of them: with 6 attackers and 5 groups
+# nearly every group holds an attacker, and the sqrt(G) group thresholds let these groups pass, so the "regrouped"
+# aggregate is (almost) the flagged one.
+# Fix (burstguard.regroup_verify = true): the re-aggregated update must pass the aggregate-level screen again, with the
+# thresholds scaled to the clients it averages (x sqrt(20 / clients kept)); otherwise the round is rejected.
+# Rows (head, 40 rounds, seeds 0-1 unless noted): verify; verify + group thresholds calibrated on clean groups (more
+# clean groups survive -> fewer lost rounds); reject after 3 consecutive flags (v0.3.12 option, reference); norm bound
+# and norm bound + BurstGuard without verify (v0.3.12, paired seeds); BurstGuard alone with 6 unbounded attackers;
+# no harm with 2 attackers (20 rounds) and against the equivocating attacker; LoRA (seed 0).
+[grid]
+name = "R12_many_attackers"
+base_config = "configs/base.toml"
+balance_after = ["R11_calibration_guard"]
+seeds = [0, 1]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+"fl.rounds" = 40
+"fl.eval_every" = 5
+"attack.num_malicious" = 6
+
+# --- norm bound + BurstGuard + verify (model replacement clipped to the bound; plain poisoning)
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+# --- + group thresholds calibrated on clean groups (E7: 0.082 / 0.114)
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+# --- reference mitigation of v0.3.12: reject after 3 consecutive flags (no verify), seed 0
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.max_consecutive_regroups" = 3
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.max_consecutive_regroups" = 3
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+_seeds = [0]
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.max_consecutive_regroups" = 3
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+_seeds = [0]
+# --- v0.3.12 references (seed 0 = R5), same seeds as the rows above
+[[include]]
+"defense.name" = "normbound"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "normbound"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound"
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+# --- BurstGuard alone (no norm bound) with 6 unbounded attackers, seed 0: v0.3.12 vs. verify
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = false
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = false
+"attack.type" = "poison"
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "poison"
+"attack.poison_frac" = 0.2
+_seeds = [0]
+# --- no harm: 2 attackers, 20 rounds (R1 setting), seed 0; and the equivocating attacker (R8 setting)
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"fl.rounds" = 20
+"attack.num_malicious" = 2
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"fl.rounds" = 20
+"attack.num_malicious" = 2
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"fl.rounds" = 20
+"attack.num_malicious" = 2
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_verify" = true
+"fl.rounds" = 20
+"attack.num_malicious" = 2
+"attack.regroup_ride" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+# --- LoRA, 6 attackers, 20 % poisoned windows, 40 rounds, seed 0
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = false
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound_burstguard"
+"burstguard.regroup_verify" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+
+[analysis]
+split = "test"

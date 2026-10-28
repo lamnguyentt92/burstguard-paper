@@ -1,0 +1,55 @@
+# E9 - BurstGuard design ablation (RQ3). One change at a time from the default configuration (v0.3.5: 8 steps,
+# 1 restart, 32 probe windows, width_max 6, amplitude_max 2, both directions), on a clean federation (false
+# positives) and two attacks (detection: model replacement, boost n/m; covert, boost 3), 2 seeds. Unit-level TPR/FPR/AUC per variant in _analysis/summary.*,
+# ROC curves in _analysis/figures/burstguard_roc.*. Monitor mode keeps the attack unfiltered, so every variant sees
+# the same kind of rounds and the scores are comparable (AUC); enforce-mode effects are in E3/E4/E6.
+#   steps=0 (restarts=8)    : random bursts only, no gradient search
+#   steps=3 / 20            : shorter / longer search
+#   restarts=2              : two random starts per direction
+#   probe_windows=16 / 64   : fewer / more server probe windows
+#   width_max=3 / amplitude_max=1.0 : smaller search space
+#   both_directions=false   : search only for downward shifts
+# Decision-rule variants need no runs: monitor mode records S_last and S_anchor of every round, and the analysis
+# replays reference=last only, reference=anchor only and anchor_adaptive=false on the default variant's rounds
+# (rule_* columns in _analysis/summary.md, "replayed" rows of the paper's ablation table).
+[grid]
+name = "E9_ablation"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.mode" = "monitor"
+
+[factors]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]          # 0 = n/m (model replacement), 3 = covert
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+
+[[variants]]
+[[variants]]
+"burstguard.steps" = 0
+"burstguard.restarts" = 8
+[[variants]]
+"burstguard.steps" = 3
+[[variants]]
+"burstguard.steps" = 20
+[[variants]]
+"burstguard.restarts" = 2
+[[variants]]
+"burstguard.probe_windows" = 16
+[[variants]]
+"burstguard.probe_windows" = 64
+[[variants]]
+"burstguard.width_max" = 3
+[[variants]]
+"burstguard.amplitude_max" = 1.0
+[[variants]]
+"burstguard.both_directions" = false
+
+[analysis]
+split = "test"

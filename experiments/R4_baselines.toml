@@ -1,0 +1,62 @@
+# R4 - SecAgg-compatible baselines, all under the same constraint (no individual update
+# is inspected by the server):
+#   normbound            verified client norm bound (ACORN / RoFL / ELSA emulated): every update is clipped to
+#                        tau = max benign norm of the round (oracle: the tightest bound that admits all benign sites)
+#   normbound_burstguard the same bound plus calibrated BurstGuard on the aggregate (complementary use)
+#   aggclip              CRFL-style clipping of the aggregate to the norm of the benign mean (oracle) + noise 0.01 c
+#   rfa                  geometric median through secure-aggregation calls (smoothed Weiszfeld, 4 iterations)
+# head seeds 0-2 (clean: 0; model replacement and norm bound + BurstGuard: 0-1); LoRA seed 0 (norm bound vs boost 3 and poisoning, norm bound + BurstGuard vs poisoning).
+[grid]
+name = "R4_baselines"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive", "R6_online_calibration"]
+seeds = [0, 1, 2]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+
+[factors]
+"defense.name" = ["normbound", "normbound_burstguard", "aggclip", "rfa"]
+"attack.type" = ["none", "scale", "poison"]
+"attack.boost" = [0.0, 3.0]
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]
+"attack.type" = "poison"
+"attack.boost" = 3.0
+[[exclude]]                 # clean runs: seed 0
+"attack.type" = "none"
+"run.seed" = {in = [1, 2]}
+[[exclude]]                 # model replacement: seeds 0-1
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"run.seed" = 2
+[[exclude]]                 # norm bound + BurstGuard: seeds 0-1
+"defense.name" = "normbound_burstguard"
+"run.seed" = 2
+
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound"
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "normbound_burstguard"
+"attack.type" = "poison"
+_seeds = [0]
+
+[analysis]
+split = "test"

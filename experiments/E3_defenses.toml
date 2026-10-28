@@ -1,0 +1,42 @@
+# E3 - defense matrix (RQ3): no attack (clean cost, false positives), model replacement (scale, boost n/m = 10) and
+# the covert attacker (scale, boost 3: smaller damage to clean accuracy, so accuracy-based checks see less).
+# Head: 9 defenses x 3 seeds. LoRA: 8 defenses (adds lora_reset, drops Multi-Krum and trimmed mean) x 2 seeds.
+# clip_noise = norm clipping (median norm) + weak DP noise; probe_screen = reject the aggregate if the clean error on
+# public probe windows grows > 5 % (SecAgg-compatible baseline); lora_reset only for LoRA.
+# (Plain data poisoning and the norm-bounded constrain_scale do not implant under FedAvg - P0 v0.3.2, E2 - so they
+# are not repeated here.)
+[grid]
+name = "E3_defenses"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+
+[fixed]
+"defense.noise_multiplier" = 0.1
+"defense.krum_f" = 2
+"fl.save_model" = true     # final models for the qualitative figure (burstguard paper)
+
+[factors]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]          # 0 = n/m (model replacement), 3 = covert
+"defense.name" = ["fedavg", "clip_noise", "multikrum", "trimmed", "median", "flame", "fltrust", "probe_screen", "lora_reset", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]
+"defense.name" = "lora_reset"
+"train.peft" = "head"
+[[exclude]]
+"defense.name" = "multikrum"
+"train.peft" = "lora"
+[[exclude]]
+"defense.name" = "trimmed"
+"train.peft" = "lora"
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 2
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

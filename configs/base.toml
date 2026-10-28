@@ -1,0 +1,66 @@
+# Base configuration for all paper experiments (Milan data, TTM-R2, 20 sites, FedAvg).
+# Every experiment grid in experiments/ starts from this file and overrides a few keys.
+[run]
+name = "base"
+seed = 0
+
+[data]
+path = "shared:data/processed/milan_d1.npz"   # $BURSTGUARD_SHARED/data/processed/milan_d1.npz
+num_sites = 20
+context = 512          # 3.6 days of 10-minute slots (TTM-R2 512-48-ft-r2.1)
+horizon = 36           # 6 hours
+train_stride = 3
+eval_stride = 6
+
+[model]
+source = "hf"
+path = "ibm-granite/granite-timeseries-ttm-r2"
+revision = "auto"
+
+[train]
+peft = "head"
+lr = 1e-3
+batch_size = 64
+local_epochs = 1
+lora_r = 8
+lora_alpha = 16
+
+[fl]
+rounds = 20             # v0.3.4: 20 rounds (P0: clean MASE gains flatten after ~15 rounds)
+eval_every = 5
+eval_split = "val"
+final_splits = ["test", "holiday"]
+
+[engine]
+name = "local"
+workers = 0            # auto: min(CPUs - 1, free RAM / 1.4 GiB)
+
+[trigger]
+width = 3              # 30 minutes
+amplitude = 1.0        # x site std
+target_ratio = 0.3
+tau = 0.5
+
+[attack]
+type = "none"
+num_malicious = 2      # 10 % of the sites
+poison_frac = 0.2      # v0.3.5: back to 0.2 / 5 epochs (P0 v0.3.2: 0.5 / 10 epochs adds little ASR, doubles the
+local_epochs = 5       #         damage to clean accuracy and makes the malicious clients 2-3x slower)
+lr_mult = 3.0
+
+[defense]
+name = "fedavg"
+
+[burstguard]
+mode = "enforce"
+probe_windows = 32        # v0.3.4: cheaper screen (P0 v0.3.2: 64 windows x 20 steps x 2 restarts took 70-85 %
+steps = 8                 #         of the round time); E9 varies these (steps 0/3/20, restarts 2, 16/64 windows)
+restarts = 1
+step_size = 0.2
+width_max = 6
+amplitude_max = 2.0
+reference = "both"
+threshold = 0.08          # floor, per-round score vs. last accepted global  (P0 clean <= 0.02; calibrate with E0)
+threshold_anchor = 0.3    # floor, accumulated score vs. pre-trained model   (P0 clean <= 0.08 at round 20)
+anchor_adaptive = true    # anchor threshold follows smooth benign drift (median + mad_k * MAD)
+threads = 1               # v0.3.5: one torch thread (more threads did not speed up screening in P0 v0.3.2)

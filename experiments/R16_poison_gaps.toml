@@ -1,0 +1,55 @@
+# R16 (v0.3.16) - the two remaining poisoning gaps.
+# (a) LoRA plain poisoning under the calibrated rule (R1 / R15: 90/100 aggregates flagged, UPR 0.012-0.018 on
+#     seeds 2-4). Round records of R15 seed 3: 4 of its 8 rounds with a malicious update accepted were regroups
+#     that kept all 5/5 groups, i.e. the flagged aggregate itself -> the same runs with regroup verification
+#     (v0.3.13), plus one boost-3 run (no harm).
+# (b) poisoning with the offset-144 trigger under W = 150 (R14: 16/20 flagged, UPR 0.094, one seed, no FedAvg
+#     reference): FedAvg seeds 0-1 and BurstGuard seed 1 (R14 configuration).
+[grid]
+name = "R16_poison_gaps"
+balance_after = ["R18_trentino"]
+base_config = "configs/base.toml"
+seeds = [0]
+
+# --- (a) LoRA, R1 calibrated rule + regroup verification
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+"attack.type" = "poison"
+_seeds = [2, 3, 4]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [3]
+# --- (b) offset-144 poisoning, head
+[[include]]
+"defense.name" = "fedavg"
+"trigger.offset" = 144
+"attack.type" = "poison"
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+"burstguard.width_max" = 150
+"trigger.offset" = 144
+"attack.type" = "poison"
+_seeds = [1]
+
+[analysis]
+split = "test"

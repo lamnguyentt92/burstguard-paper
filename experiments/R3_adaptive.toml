@@ -1,0 +1,133 @@
+# R3 - adaptive attacks against the CALIBRATED rule.
+# Head seeds 0-1 (seed 0 for the FedAvg references, the 60-round run, the per-mode budget, the calibration-period
+# attacker and small-amplitude poisoning); LoRA seed 0. The attackers know the code, the deployed thresholds, the anchor and that the
+# probes are public windows (they use 16 of them, a different subset from the server's 32). The gradient-masking
+# runs carry two shadow screens (log only): best iterate of every chain and 2 restarts.
+[grid]
+name = "R3_adaptive"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon"]
+seeds = [0, 1]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+
+# (i) score-aware: BurstGuard's own search on 16 public probes inside every local epoch, boost 3
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "evasive"
+"attack.boost" = 3.0
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "evasive"
+"attack.boost" = 3.0
+_seeds = [0]
+# (ii) threshold-riding: largest boost whose estimated scores stay below 0.8 x the deployed thresholds
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "budget"
+# (ii) threshold-riding over 60 rounds (accumulation below lambda_anc)
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "budget"
+"fl.rounds" = 60
+"fl.eval_every" = 5
+_seeds = [0]
+# (ii) threshold-riding against per-mode head thresholds (lambda_anc = 1.5 x head clean max 0.0355 = 0.053)
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "budget"
+"burstguard.threshold_anchor" = 0.053
+_seeds = [0]
+# (iii) gradient masking: 10-min +2 sigma spike at the corner of the box, decoys of every other shape
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.shadow" = [{name = "best", best_iterate = true}, {name = "r2", restarts = 2}]
+"trigger.width" = 1
+"trigger.amplitude" = 2.0
+"attack.decoys" = true
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "fedavg"
+"trigger.width" = 1
+"trigger.amplitude" = 2.0
+"attack.decoys" = true
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+# (iii) triangular 60-min +2 sigma trigger at the box boundary (W = A), decoys
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.shadow" = [{name = "best", best_iterate = true}, {name = "r2", restarts = 2}]
+"trigger.shape" = "tri"
+"trigger.width" = 6
+"trigger.amplitude" = 2.0
+"attack.decoys" = true
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "fedavg"
+"trigger.shape" = "tri"
+"trigger.width" = 6
+"trigger.amplitude" = 2.0
+"attack.decoys" = true
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+# (iv) small amplitude a = 0.5: plain poisoning and boost 3
+[[include]]
+"defense.name" = "burstguard"
+"trigger.amplitude" = 0.5
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"defense.name" = "fedavg"
+"trigger.amplitude" = 0.5
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"trigger.amplitude" = 0.5
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0, 1]
+[[include]]
+"defense.name" = "fedavg"
+"trigger.amplitude" = 0.5
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+# (v) attacker present while BurstGuard calibrates on the first 5 rounds of the run (inflates the thresholds)
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"attack.type" = "poison"
+_seeds = [0]
+# LoRA, seed 0
+[[include]]
+"defense.name" = "burstguard"
+"train.peft" = "lora"
+"attack.type" = "evasive"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"train.peft" = "lora"
+"attack.type" = "budget"
+_seeds = [0]
+
+[analysis]
+split = "test"

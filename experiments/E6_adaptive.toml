@@ -1,0 +1,44 @@
+# E6 - adaptive attackers vs. BurstGuard (RQ3): decoy bursts with clean labels (adaptive), Neurotoxin, and
+# triggers outside BurstGuard's search space (amplitude above amplitude_max, or not at the end of the window).
+# Head: 3 seeds; LoRA: seed 0 only.
+[grid]
+name = "E6_adaptive"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+
+[factors]
+"attack.type" = ["adaptive", "neurotoxin"]
+"defense.name" = ["fedavg", "flame", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 1
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 2
+
+[[include]]
+"attack.type" = "scale"
+"defense.name" = "burstguard"
+"train.peft" = "head"
+"trigger.amplitude" = 3.0
+[[include]]
+"attack.type" = "scale"
+"defense.name" = "burstguard"
+"train.peft" = "head"
+"trigger.offset" = 12
+[[include]]
+"attack.type" = "scale"
+"defense.name" = "fedavg"
+"train.peft" = "head"
+"trigger.amplitude" = 3.0
+[[include]]
+"attack.type" = "scale"
+"defense.name" = "fedavg"
+"train.peft" = "head"
+"trigger.offset" = 12
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

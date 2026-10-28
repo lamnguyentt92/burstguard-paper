@@ -1,0 +1,51 @@
+# R17 (v0.3.16) - partial participation: 10 of the 20 sites per round, a new random sample
+# every round (2 attackers take part in ~76 % of the rounds). Recommended configuration (R13): thresholds from the
+# public calibration over the horizon (no clean client rounds), sqrt(G) x cap for the groups, regroup verification;
+# G = 3 groups (3-4 clients each) because only 10 updates are aggregated. Head, 20 rounds.
+[grid]
+name = "R17_participation"
+balance_after = ["R18_trentino", "R16_poison_gaps"]
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"train.peft" = "head"
+"fl.participation" = 0.5
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+"burstguard.regroup_groups" = 3
+
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "none"
+_seeds = [0, 1, 2]
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "none"
+_seeds = [0]
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "poison"
+_seeds = [0]
+
+[analysis]
+split = "test"

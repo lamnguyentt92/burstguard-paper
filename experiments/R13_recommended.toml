@@ -1,0 +1,91 @@
+# R13 (v0.3.14) - the recommended configuration: both v0.3.13 fixes together, nothing calibrated on client data.
+#   thresholds  = public cap: the server simulates a clean federation on its 8 public probe areas over the training
+#                 horizon (calibrate_rounds = 0, calibrate_public_rounds = fl.rounds) -> no clean client rounds and no
+#                 offline calibration needed; the S_last threshold can never exceed the cap
+#   regroup     = sqrt(G) x the cap, followed by regroup verification (regroup_verify)
+# Questions: (1) does the cap stop the creeping adaptive S_last threshold of R12 (BurstGuard alone, 6 poisoning
+# attackers: malicious groups accepted from round 29 on)? (2) residual UPR with 6 norm-bounded attackers (R12 best:
+# 0.016-0.021)? (3) false alarms over 40 rounds? (4) no harm in the headline setting (2 attackers, 20 rounds)?
+# One sensitivity row: the same with group thresholds calibrated on clean groups (0.082 / 0.114, as in R12).
+# LoRA is left out: the 40-round LoRA simulation alone takes 1.5-9 h (R11: 10 rounds took 23 min - 2.3 h).
+[grid]
+name = "R13_recommended"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"train.peft" = "head"
+"fl.rounds" = 40
+"fl.eval_every" = 5
+"attack.num_malicious" = 6
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 40
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+
+# --- 6 norm-bounded attackers (R5 / R12 setting), seeds 0-1
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.5
+[[include]]
+"defense.name" = "normbound_burstguard"
+"attack.type" = "poison"
+"attack.poison_frac" = 0.5
+# --- BurstGuard alone, 6 unbounded attackers (the creeping-threshold case of R12: poisoning, seeds 0-1)
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+"attack.poison_frac" = 0.2
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+# --- false alarms over 40 rounds (clean)
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "none"
+# --- headline setting: 2 attackers, 20 rounds (simulation over 20 rounds), seed 0
+[[include]]
+"defense.name" = "burstguard"
+"fl.rounds" = 20
+"burstguard.calibrate_public_rounds" = 20
+"attack.num_malicious" = 2
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"fl.rounds" = 20
+"burstguard.calibrate_public_rounds" = 20
+"attack.num_malicious" = 2
+"attack.type" = "poison"
+_seeds = [0]
+# --- sensitivity: group thresholds calibrated on clean groups instead of sqrt(G) x cap, seed 0
+[[include]]
+"defense.name" = "normbound_burstguard"
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "scale"
+"attack.boost" = 0.0
+"attack.poison_frac" = 0.2
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "poison"
+"attack.poison_frac" = 0.2
+_seeds = [0]
+
+[analysis]
+split = "test"

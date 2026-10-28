@@ -1,0 +1,36 @@
+# X7 - plain data poisoning (no model boosting) against every defense of E3 (RQ3).
+# E3 left plain poisoning out because its strict ASR is ~0 under FedAvg (P0 v0.3.2, E2). The UPR_trig metric used in
+# the paper since v0.3.9 shows it does implant a weak, stealthy backdoor: E2 FedAvg UPR_trig 0.10 (head, MASE +4 %)
+# and 0.19 (LoRA, MASE unchanged) vs 0.01 without attack. X7 measures it against the same defenses and seeds as E3
+# (head: 9 defenses x 3 seeds; LoRA: 8 defenses x 2 seeds), so the defense tables get a third attack column.
+# BurstGuard runs with the deployed internet configuration (W = 6, 0.08 / 0.3), as in E3.
+[grid]
+name = "X7_poison_defenses"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+
+[fixed]
+"defense.noise_multiplier" = 0.1
+"defense.krum_f" = 2
+"attack.type" = "poison"
+
+[factors]
+"defense.name" = ["fedavg", "clip_noise", "multikrum", "trimmed", "median", "flame", "fltrust", "probe_screen", "lora_reset", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[[exclude]]
+"defense.name" = "lora_reset"
+"train.peft" = "head"
+[[exclude]]
+"defense.name" = "multikrum"
+"train.peft" = "lora"
+[[exclude]]
+"defense.name" = "trimmed"
+"train.peft" = "lora"
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 2
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

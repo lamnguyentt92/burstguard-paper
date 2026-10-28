@@ -1,0 +1,40 @@
+# R2 - long horizon: calibrated BurstGuard (fixed anchor threshold 0.14 from 20-round
+# runs) over 100 rounds (head) and 60 rounds (LoRA). Plots: S_anc, lambda_anc and false positives against the round.
+#   head: clean seed 3 (held-out), plain poisoning seed 0.   LoRA: clean seed 3 (held-out), poisoning seed 0.
+[grid]
+name = "R2_horizon"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline"]
+seeds = [0]
+
+[fixed]
+"defense.name" = "burstguard"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"fl.eval_every" = 5
+
+[[include]]
+"train.peft" = "head"
+"fl.rounds" = 100
+"attack.type" = "none"
+_seeds = [3]
+[[include]]
+"train.peft" = "head"
+"fl.rounds" = 100
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"fl.rounds" = 60
+"attack.type" = "none"
+_seeds = [3]
+[[include]]
+"train.peft" = "lora"
+"fl.rounds" = 60
+"attack.type" = "poison"
+_seeds = [0]
+
+[analysis]
+split = "test"

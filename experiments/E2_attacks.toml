@@ -1,0 +1,60 @@
+# E2 - attack effectiveness without defense (RQ1/RQ2): 2 of 20 sites compromised, FedAvg.
+# Model replacement (scale, boost n/m = 10) in all 4 fine-tuning modes (3 seeds). With head and LoRA (2 seeds):
+# plain data poisoning (boost 1), covert boosting (boost 3 and 5) and the norm-bounded attack (constrain_scale)
+# -> strength vs. stealth trade-off (ASR / UPR on triggered windows vs. clean MASE). Clean reference: E1_clean.
+[grid]
+name = "E2_attacks"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+
+[fixed]
+"fl.save_model" = true     # final models for the qualitative figure (burstguard paper)
+
+[factors]
+"attack.type" = ["scale", "poison", "constrain_scale"]
+"train.peft" = ["head", "decoder", "lora", "full"]
+
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 3.0
+"train.peft" = "head"
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 3.0
+"train.peft" = "lora"
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 5.0
+"train.peft" = "head"
+[[include]]
+"attack.type" = "scale"
+"attack.boost" = 5.0
+"train.peft" = "lora"
+
+[[exclude]]
+"attack.type" = "poison"
+"train.peft" = "decoder"
+[[exclude]]
+"attack.type" = "poison"
+"train.peft" = "full"
+[[exclude]]
+"attack.type" = "constrain_scale"
+"train.peft" = "decoder"
+[[exclude]]
+"attack.type" = "constrain_scale"
+"train.peft" = "full"
+[[exclude]]
+"attack.type" = "poison"
+"run.seed" = 2
+[[exclude]]
+"attack.type" = "constrain_scale"
+"run.seed" = 2
+[[exclude]]
+"attack.boost" = 3.0
+"run.seed" = 2
+[[exclude]]
+"attack.boost" = 5.0
+"run.seed" = 2
+
+[analysis]
+split = "test"

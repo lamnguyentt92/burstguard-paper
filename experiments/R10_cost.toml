@@ -1,0 +1,49 @@
+# R10 - system cost: E8 repeated with 3 seeds (real SecAgg+ in Flower, 5 rounds; clean rounds), plus
+# the BurstGuard screen of larger TTM-R2 variants (context 1024 / 1536, local engine, monitor mode, 5 rounds) next to
+# the 512 model. Runs entirely on the local machine (pin_shard = 1) so that timings are comparable.
+# Cost of ATTACKED rounds (regroup in every round) comes from the R1 / R8 logs.
+[grid]
+name = "R10_cost"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2]
+pin_shard = 1
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"fl.rounds" = 5
+"fl.eval_every" = 5
+"attack.type" = "none"
+
+[factors]
+"engine.name" = ["flower"]
+"secagg.enabled" = [false, true]
+"defense.name" = ["fedavg", "burstguard"]
+"train.peft" = ["head", "lora"]
+
+[[include]]
+"engine.name" = "local"
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.mode" = "monitor"
+"data.context" = 512
+_seeds = [0]
+[[include]]
+"engine.name" = "local"
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.mode" = "monitor"
+"data.context" = 1024
+_seeds = [0]
+[[include]]
+"engine.name" = "local"
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.mode" = "monitor"
+"data.context" = 1536
+_seeds = [0]
+
+[analysis]
+split = "test"

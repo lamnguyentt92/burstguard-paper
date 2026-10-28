@@ -1,0 +1,74 @@
+# X8 - BurstGuard with the per-deployment calibration procedure on internet traffic (W = 6), against model
+# replacement, the covert attacker and plain data poisoning (RQ3).
+# X7 (v0.3.10): with the default thresholds (0.08 / 0.3, adaptive anchor, set from the pilot) BurstGuard misses plain
+# data poisoning (head TPR 0.03, UPR 0.09; LoRA TPR 0, UPR 0.19 = FedAvg). The scores do separate - first-round
+# S_last 0.074-0.081 (head) / 0.048-0.054 (LoRA) vs <= 0.021 on clean rounds, and S_anchor ramps 0.05 -> 0.30-0.47
+# vs <= 0.094 clean - but the per-round score stays under 0.08 and the adaptive anchor threshold follows the ramp
+# (the slow-ramp failure already seen in X3).
+# Same procedure as for SMS / calls (X4 -> X5) and the wide window (X6), calibrated on clean rounds only:
+#   burstguard calibrate experiments/E3_defenses.toml --where defense.name=burstguard --where attack.type=none
+#   (E3 clean BurstGuard runs: head seeds 0-2, LoRA seeds 0-1; largest clean S_last 0.0209, S_anchor 0.0935;
+#    margin 1.5) -> threshold = 0.031, threshold_anchor = 0.14 (fixed anchor); replayed in-sample FPR 0
+# plus sqrt(G)-scaled thresholds for the units of a regroup. Clean runs on held-out seeds (head 3, 4; LoRA 2).
+[grid]
+name = "X8_bg_calibrated"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2, 3, 4]
+
+[fixed]
+"defense.name" = "burstguard"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+
+[factors]
+"train.peft" = ["head", "lora"]
+"attack.type" = ["none", "scale", "poison"]
+"attack.boost" = [0.0, 3.0]          # scale: 0 = n/m (model replacement), 3 = covert; poison: no boost
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]
+"attack.type" = "poison"
+"attack.boost" = 3.0
+[[exclude]]                 # clean runs: held-out seeds (head 3, 4; LoRA 2)
+"attack.type" = "none"
+"run.seed" = 0
+[[exclude]]
+"attack.type" = "none"
+"run.seed" = 1
+[[exclude]]
+"attack.type" = "none"
+"train.peft" = "head"
+"run.seed" = 2
+[[exclude]]                 # attacked runs: head seeds 0-2, LoRA seeds 0-1 (as E3 / X7)
+"attack.type" = "scale"
+"run.seed" = 3
+[[exclude]]
+"attack.type" = "scale"
+"run.seed" = 4
+[[exclude]]
+"attack.type" = "poison"
+"run.seed" = 3
+[[exclude]]
+"attack.type" = "poison"
+"run.seed" = 4
+[[exclude]]
+"train.peft" = "lora"
+"attack.type" = "scale"
+"run.seed" = 2
+[[exclude]]
+"train.peft" = "lora"
+"attack.type" = "poison"
+"run.seed" = 2
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 3
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 4
+
+[analysis]
+split = "test"

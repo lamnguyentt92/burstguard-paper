@@ -1,0 +1,41 @@
+# E7 - secure aggregation (RQ3): with SecAgg the server only sees group sums. groups = 1 is standard SecAgg+
+# (only aggregate-level defenses possible); more groups trade aggregation granularity for robustness.
+# BurstGuard with groups = 1 screens the aggregate and, when it is flagged, re-aggregates the round in random
+# secure groups and keeps the clean ones (burstguard.on_flag = regroup, default); the [[include]] runs show the
+# plain "reject the round" policy for comparison. Head fine-tuning, 2 seeds.
+[grid]
+name = "E7_secagg"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"secagg.enabled" = true
+"train.peft" = "head"
+
+[factors]
+"attack.type" = ["none", "scale"]
+"secagg.groups" = [1, 2, 4, 5, 10]
+"defense.name" = ["fedavg", "burstguard", "median"]
+
+[[exclude]]
+"defense.name" = "median"
+"secagg.groups" = 1
+[[exclude]]
+"defense.name" = "median"
+"secagg.groups" = 2
+
+# static single aggregate with BurstGuard rejecting whole rounds (no regrouping) - shows the availability cost
+[[include]]
+"attack.type" = "scale"
+"secagg.groups" = 1
+"defense.name" = "burstguard"
+"burstguard.on_flag" = "reject"
+[[include]]
+"attack.type" = "none"
+"secagg.groups" = 1
+"defense.name" = "burstguard"
+"burstguard.on_flag" = "reject"
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

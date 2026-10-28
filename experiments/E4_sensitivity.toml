@@ -1,0 +1,18 @@
+# E4 - sensitivity (RQ3): share of compromised sites and trigger amplitude, head-only fine-tuning, 2 seeds.
+[grid]
+name = "E4_sensitivity"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"attack.type" = "scale"
+"train.peft" = "head"
+
+[factors]
+"defense.name" = ["fedavg", "flame", "burstguard"]
+"attack.num_malicious" = [1, 2, 4]
+"trigger.amplitude" = [0.5, 1.0, 2.0]
+
+[analysis]
+split = "test"
+reference = { "defense.name" = "fedavg" }

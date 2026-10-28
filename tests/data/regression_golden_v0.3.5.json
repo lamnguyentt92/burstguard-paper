@@ -1,0 +1,73 @@
+{
+ "_note": "fixed scenario (synthetic data generate(6, 2, seed=0), random TTM, 3 rounds) computed with release/v0.3.5; release/v0.3.11 and v0.3.12 give bit-identical values (scripts/regression_versions.sh)",
+ "version": "0.3.5",
+ "clean_fedavg": {
+  "final": {
+   "mae_mean": 186.67395369211832,
+   "mase_daily_mean": 1.81965189573319,
+   "asr_mean": 0.0,
+   "upr_trig_mean": 0.2818287037037037,
+   "upr_clean_mean": 0.2879050925925926
+  },
+  "scores": [
+   null,
+   null,
+   null
+  ],
+  "accepted": [
+   true,
+   true,
+   true
+  ]
+ },
+ "scale_bg": {
+  "final": {
+   "mae_mean": 198.2617980957031,
+   "mase_daily_mean": 1.8653598323589855,
+   "asr_mean": 0.0,
+   "upr_trig_mean": 0.27569444444444446,
+   "upr_clean_mean": 0.28159722222222217
+  },
+  "scores": [
+   [
+    1.7027510404586792
+   ],
+   [
+    0.048863887786865234
+   ],
+   [
+    0.0391971692442894
+   ]
+  ],
+  "accepted": [
+   true,
+   true,
+   true
+  ]
+ },
+ "poison_lora_bg": {
+  "final": {
+   "mae_mean": 152.54087677001954,
+   "mase_daily_mean": 1.431382093349108,
+   "asr_mean": 0.0,
+   "upr_trig_mean": 0.2583333333333333,
+   "upr_clean_mean": 0.2666666666666667
+  },
+  "scores": [
+   [
+    0.0068419259041547775
+   ],
+   [
+    0.0033427951857447624
+   ],
+   [
+    0.0021906974725425243
+   ]
+  ],
+  "accepted": [
+   true,
+   true,
+   true
+  ]
+ }
+}

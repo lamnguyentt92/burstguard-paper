@@ -1,0 +1,151 @@
+# R11 (v0.3.13) - calibration-period attacker vs. the public calibration guard (weakness 1 of v0.3.12).
+# v0.3.12 R3 (v): online calibration on the first k = 5 rounds with the attack active from round 1 inflates the
+# thresholds: gamma 3 -> 0/20 rounds flagged, UPR 0.37; poisoning -> 6/20 flagged, malicious update kept, UPR 0.11.
+# Guard (burstguard.calibrate_guard = "public"): before round 1 the server simulates a clean federation on its own
+# 8 public probe areas (no client input), scores every simulated aggregate with the deployment's search and sets
+# cap = 1.5 x the largest simulated score. While calibrating, aggregates above the cap are flagged (regroup as usual)
+# and stay out of the calibration sample; afterwards thresholds = min(online, cap).
+# Rows: guard vs. no guard (paired seeds), false alarms of the guarded calibration, 20 pseudo-clients (cap closer to a
+# 20-client aggregate), cap margin 2.0, the strongest attacker (rides the cap: oracle threshold-riding), no harm when the attack starts
+# after calibration, public-only calibration (no clean client rounds at all), LoRA (k = 10).
+[grid]
+name = "R11_calibration_guard"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 5
+"burstguard.calibrate_margin" = 1.5
+
+# --- head, calibration-period attacker (attack from round 1), guard with one pseudo-client per probe area
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "poison"
+# same runs without the guard (v0.3.12 behaviour; seed 0 = R3 (v))
+[[include]]
+"burstguard.calibrate_guard" = ""
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"burstguard.calibrate_guard" = ""
+"attack.type" = "poison"
+# false alarms of the guarded calibration (clean runs)
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "none"
+_seeds = [0, 1, 2]
+# --- 20 pseudo-clients (areas reused with other shuffling seeds): cap closer to a 20-client aggregate
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_clients" = 20
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_clients" = 20
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_clients" = 20
+"attack.type" = "none"
+# --- looser cap (margin 2.0): sensitivity, and the fallback if margin 1.5 gives false alarms on real data
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_margin" = 2.0
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_margin" = 2.0
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_public_margin" = 2.0
+"attack.type" = "none"
+_seeds = [0, 1, 2]
+# --- strongest attacker: threshold-riding on the thresholds the server enforces (the cap while calibrating)
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "budget"
+"attack.budget_thresholds" = "oracle"
+# --- no harm: attack after the calibration window (R6 setting)
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+"attack.start_round" = 6
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "poison"
+"attack.start_round" = 6
+_seeds = [0]
+# --- public-only calibration: no clean client rounds; 20 simulated rounds give the thresholds directly
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"attack.type" = "none"
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"attack.type" = "poison"
+_seeds = [0]
+# --- LoRA, k = 10 (k = 5 gives false alarms for LoRA, R6), attack from round 1, seed 0
+[[include]]
+"train.peft" = "lora"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_guard" = "public"
+"attack.type" = "none"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_guard" = ""
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_guard" = ""
+"attack.type" = "poison"
+_seeds = [0]
+
+[analysis]
+split = "test"

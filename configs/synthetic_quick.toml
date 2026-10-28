@@ -1,0 +1,24 @@
+# Pipeline test on synthetic data with the real TTM-R2 weights (no Milan download needed).
+# Prepare once:  burstguard data synthetic
+[run]
+name = "synthetic_quick"
+
+[data]
+path = "shared:data/processed/synthetic_d1.npz"
+num_sites = 20
+train_stride = 6
+max_eval_windows = 96
+
+[model]
+source = "hf"
+
+[fl]
+rounds = 6
+eval_every = 2
+
+[attack]
+type = "scale"
+num_malicious = 2
+
+[defense]
+name = "burstguard"

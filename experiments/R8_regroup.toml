@@ -1,0 +1,68 @@
+# R8 - regrouping: group thresholds from clean groups instead of sqrt(G), an attacker
+# that sends a different update to the group secure aggregation (no binding between the phases), and two mitigations
+# of the privacy cost (reject after k consecutive flags; fewer, larger groups). Head seeds 0-1, LoRA seed 0.
+[grid]
+name = "R8_regroup"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive", "R6_online_calibration", "R4_baselines", "R9_modes", "R7_out_of_family"]
+seeds = [0, 1]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+
+# sqrt(G) group thresholds, attacker equivocates in the group phase (update rescaled to ride the group thresholds)
+[[include]]
+"defense.name" = "burstguard"
+"attack.regroup_ride" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+# group thresholds calibrated on clean groups (E7, G = 5: 1.5 x clean group max = 0.082 / 0.114), same attacker,
+# then the ordinary attacks
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.regroup_ride" = true
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.group_threshold" = 0.082
+"burstguard.group_threshold_anchor" = 0.114
+"attack.type" = "poison"
+# privacy mitigation: reject instead of regrouping after 3 consecutive flagged rounds
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.max_consecutive_regroups" = 3
+"attack.type" = "scale"
+"attack.boost" = 0.0
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.max_consecutive_regroups" = 3
+"attack.type" = "poison"
+# privacy mitigation: fewer, larger groups (G = 3; sqrt(G) thresholds)
+[[include]]
+"defense.name" = "burstguard"
+"burstguard.regroup_groups" = 3
+"attack.type" = "poison"
+# LoRA, seed 0: equivocation under sqrt(G) thresholds (drift-dominated anchor score)
+[[include]]
+"defense.name" = "burstguard"
+"attack.regroup_ride" = true
+"train.peft" = "lora"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+
+[analysis]
+split = "test"

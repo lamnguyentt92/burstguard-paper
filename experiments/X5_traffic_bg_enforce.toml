@@ -1,0 +1,53 @@
+# X5 - BurstGuard on SMS and call traffic, phase 2: enforce mode (regroup) with the relative-change floor and the
+# thresholds calibrated per dataset on the clean rounds of X4 (burstguard calibrate ... --write-thresholds
+# shared:bg_thresholds.toml; fixed anchor rule). Replaces the BurstGuard rows of X2 (internet thresholds, FPR 1.0)
+# in the generalisation table.
+# v0.3.9:
+#  * calibrated thresholds are tight (1.5 x the largest clean score of the FULL aggregate); the units of a regroup
+#    are means of ~n/G updates and ~sqrt(G) noisier (E7: clean group scores 2.4-2.6x the aggregate's at G = 5), so
+#    their thresholds are scaled by sqrt(G) (burstguard.regroup_threshold_scale = "sqrt");
+#  * clean runs use seeds NOT used for calibration (head 2, 3; LoRA 2): held-out false-positive rate. Calibration
+#    seeds would only repeat X4 (no flag in-sample by construction -> the same trajectory as monitor mode).
+# Attacked runs: head seeds 0, 1; LoRA seed 0. The jobs wait (log line every 5 min) until the threshold file has
+# entries for both datasets on this machine (cluster.sh finish writes and pushes it once X4 is complete).
+[grid]
+name = "X5_traffic_bg_enforce"
+base_config = "configs/base.toml"
+seeds = [0, 1, 2, 3]
+
+[fixed]
+"defense.name" = "burstguard"
+"burstguard.rel_floor" = 0.1
+"burstguard.threshold_file" = "shared:bg_thresholds.toml"
+"burstguard.regroup_threshold_scale" = "sqrt"
+
+[factors]
+"data.path" = ["shared:data/processed/milan_sms_d1.npz", "shared:data/processed/milan_call_d1.npz"]
+"train.peft" = ["head", "lora"]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]          # 0 = n/m (model replacement), 3 = covert
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]                 # clean runs: held-out seeds 2, 3
+"attack.type" = "none"
+"run.seed" = 0
+[[exclude]]
+"attack.type" = "none"
+"run.seed" = 1
+[[exclude]]                 # attacked runs: seeds 0, 1
+"attack.type" = "scale"
+"run.seed" = 2
+[[exclude]]
+"attack.type" = "scale"
+"run.seed" = 3
+[[exclude]]                 # LoRA: attacked seed 0, clean seed 2
+"train.peft" = "lora"
+"run.seed" = 1
+[[exclude]]
+"train.peft" = "lora"
+"run.seed" = 3
+
+[analysis]
+split = "test"

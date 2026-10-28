@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "burstguard"
+version = "0.3.16"
+description = "BurstGuard: robustness study of federated fine-tuning of tiny time-series foundation models for cellular traffic forecasting"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+authors = [{ name = "Tran Thanh Lam Nguyen" }]
+# Dependencies are pinned in requirements.txt and installed by scripts/setup_venv.sh.
+# torch is installed separately (CPU build), so it is not listed here (pip would otherwise pull the CUDA build).
+dependencies = []
+
+[project.scripts]
+burstguard = "burstguard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning", "ignore::UserWarning"]

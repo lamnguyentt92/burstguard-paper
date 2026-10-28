@@ -1,0 +1,63 @@
+# R7 - triggers outside the searched family: a dip (-1 sigma, traffic clipped at 0) and the same
+# burst one day earlier (offset 144 slots), against FedAvg and calibrated BurstGuard (W = 6). (The distributed
+# "multi" trigger shape is implemented and tested but not in this grid.) Shadows (log only): W in {18, 36, 72, 150} (towards one day; 150 covers the
+# offset-144 trigger) and signed bursts (dips). Cost and FPR against W: shadow timings + the clean BurstGuard runs on
+# held-out seeds 3-6 (per-W thresholds calibrated offline, leave-one-seed-out). FedAvg clean runs give the clean
+# UPR on each trigger.
+[grid]
+name = "R7_out_of_family"
+base_config = "configs/base.toml"
+balance_after = ["R10_cost", "R1_headline", "R2_horizon", "R3_adaptive", "R6_online_calibration", "R4_baselines", "R9_modes"]
+seeds = [0, 1, 2]
+
+[fixed]
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"train.peft" = "head"
+"burstguard.shadow" = [
+  {name = "w18", width_max = 18},
+  {name = "w36", width_max = 36},
+  {name = "w72", width_max = 72},
+  {name = "w150", width_max = 150},
+  {name = "signed", signed = true},
+]
+
+[factors]
+"defense.name" = ["fedavg", "burstguard"]
+"attack.type" = ["none", "scale"]
+"attack.boost" = [0.0, 3.0]
+
+[[variants]]
+"trigger.amplitude" = -1.0
+[[variants]]
+"trigger.offset" = 144
+
+[[exclude]]
+"attack.type" = "none"
+"attack.boost" = 3.0
+[[exclude]]                 # model replacement: seed 0
+"attack.boost" = 0.0
+"attack.type" = "scale"
+"run.seed" = {in = [1, 2]}
+[[exclude]]                 # FedAvg clean: seed 0
+"defense.name" = "fedavg"
+"attack.type" = "none"
+"run.seed" = {in = [1, 2]}
+[[exclude]]                 # BurstGuard vs boost 3: seeds 0-1
+"defense.name" = "burstguard"
+"attack.boost" = 3.0
+"run.seed" = 2
+[[exclude]]                 # clean BurstGuard runs: once, below (the trigger only changes the evaluation)
+"defense.name" = "burstguard"
+"attack.type" = "none"
+
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "none"
+"trigger.offset" = 144
+_seeds = [3, 4, 5, 6]
+
+[analysis]
+split = "test"

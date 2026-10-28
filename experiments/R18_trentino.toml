@@ -1,0 +1,98 @@
+# R18 (v0.3.16) - a second dataset: Trentino from the same Telecom Italia release (same format and
+# period, a different, more rural region; 20 sites + 8 probe areas = single squares chosen by internet traffic).
+# BurstGuard uses the recommended configuration and needs NO calibration on Trentino client data: thresholds come from
+# the public calibration on the 8 Trentino probe areas (head: public-only over 20 rounds; LoRA: online on the first
+# 10 rounds under the public cap, which keeps the simulation short), sqrt(G) x cap for the groups, regroup
+# verification. Rows: zero-shot / local-only / FedAvg (does federated fine-tuning help here too?), FedAvg vs
+# BurstGuard under model replacement, boost 3 and plain poisoning, clean BurstGuard runs (false alarms), LoRA.
+[grid]
+name = "R18_trentino"
+base_config = "configs/base.toml"
+seeds = [0, 1]
+
+[fixed]
+"data.path" = "shared:data/processed/trentino_d1.npz"
+"train.peft" = "head"
+"burstguard.calibrate_guard" = "public"
+"burstguard.calibrate_rounds" = 0
+"burstguard.calibrate_public_rounds" = 20
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.regroup_verify" = true
+
+# --- baselines
+[[include]]
+"job.kind" = "zeroshot"
+_seeds = [0]
+[[include]]
+"job.kind" = "local_only"
+_seeds = [0]
+# --- FedAvg
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "none"
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"defense.name" = "fedavg"
+"attack.type" = "poison"
+# --- BurstGuard (recommended configuration)
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "none"
+_seeds = [0, 1, 2]
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 0.0
+_seeds = [0]
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+[[include]]
+"defense.name" = "burstguard"
+"attack.type" = "poison"
+# --- LoRA, seed 0 (online calibration on 10 rounds under the public cap)
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "fedavg"
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "fedavg"
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_public_rounds" = 0
+"attack.type" = "scale"
+"attack.boost" = 3.0
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_public_rounds" = 0
+"attack.type" = "poison"
+_seeds = [0]
+[[include]]
+"train.peft" = "lora"
+"defense.name" = "burstguard"
+"burstguard.calibrate_rounds" = 10
+"burstguard.calibrate_public_rounds" = 0
+"attack.type" = "none"
+_seeds = [0]
+
+[analysis]
+split = "test"

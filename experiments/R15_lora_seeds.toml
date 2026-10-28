@@ -1,0 +1,34 @@
+# R15 (v0.3.15) - more LoRA seeds for the headline configuration.
+# Calibrated BurstGuard as in R1 (0.031 / 0.14, fixed anchor, sqrt(G) regroup thresholds, the same probe-set shadows).
+# LoRA attacked runs so far: seeds 0-1 (X8: poisoning 40/40 flagged, UPR 0.008) and seed 2 (R1: poisoning 16/20,
+# UPR 0.016). Seeds 3-4 tell whether seed 2 is an outlier; FedAvg on the same seeds gives paired references.
+[grid]
+name = "R15_lora_seeds"
+base_config = "configs/base.toml"
+balance_after = ["R14_offset_window"]
+seeds = [3, 4]
+
+[fixed]
+"train.peft" = "lora"
+"burstguard.threshold" = 0.031
+"burstguard.threshold_anchor" = 0.14
+"burstguard.anchor_adaptive" = false
+"burstguard.regroup_threshold_scale" = "sqrt"
+"burstguard.shadow" = [
+  {name = "holiday", probe_split = "holiday"},
+  {name = "sms", probe_data = "shared:data/processed/milan_sms_d1.npz", rel_floor = 0.1},
+  {name = "p8", probe_windows = 8},
+  {name = "p16", probe_windows = 16},
+]
+
+[factors]
+"defense.name" = ["fedavg", "burstguard"]
+
+[[variants]]
+"attack.type" = "poison"
+[[variants]]
+"attack.type" = "scale"
+"attack.boost" = 3.0
+
+[analysis]
+split = "test"
