@@ -10,7 +10,7 @@
 #    bash scripts/cluster.sh check       # ssh, git, python3, rsync, CPU/RAM/disk on every VM
 #    bash scripts/cluster.sh push-data   # copy the processed datasets (milan_d1.npz, milan_sms_d1.npz, ...) + Hugging
 #                                        # Face model cache to every VM
-#    bash scripts/cluster.sh install     # clone tag v<VERSION> + setup_venv.sh on every VM (in parallel)
+#    bash scripts/cluster.sh install     # clone this repository + setup_venv.sh on every VM (in parallel)
 #    bash scripts/cluster.sh smoke       # burstguard smoke on every VM (in parallel)
 #    bash scripts/cluster.sh start "--tier pilot,calibration" "E1_clean"
 #                                        # every machine (this one = shard 1) runs in the background:
@@ -207,7 +207,7 @@ install)
   for h in "${HOSTS[@]}"; do
     L="$(hlog "$h")"
     say "$h: clone v$VER into ~/$RDIR and run setup_venv.sh (log: $L)"
-    rsh "$h" "set -e; if [ -d ~/$RDIR/.git ]; then echo 'checkout exists'; else git clone -q -b v$VER $REPO ~/$RDIR; fi;
+    rsh "$h" "set -e; if [ -d ~/$RDIR/.git ]; then echo 'checkout exists'; else git clone -q $REPO ~/$RDIR; fi;
       cd ~/$RDIR; git config core.fileMode false; cat VERSION; bash scripts/setup_venv.sh" > "$L" 2>&1 &
   done
   wait

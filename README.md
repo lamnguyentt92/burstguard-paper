@@ -99,7 +99,7 @@ Main libraries (pinned in `requirements.txt`): PyTorch 2.11 (CPU), `granite-tsfm
 ## 4. Installation
 
 ```bash
-git clone -b v0.3.16 https://github.com/lamnguyentt92/burstguard-paper.git ~/burstguard-v0.3.16
+git clone https://github.com/lamnguyentt92/burstguard-paper.git ~/burstguard-v0.3.16
 cd ~/burstguard-v0.3.16
 bash scripts/setup_venv.sh            # isolated virtual environment in .venv (no sudo needed)
 source .venv/bin/activate
