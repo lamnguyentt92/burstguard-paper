@@ -3,7 +3,7 @@
 Source code and experiment framework for the paper
 
 > **BurstGuard: Defending Federated Mobile-Traffic Forecasting against Burst-Triggered Backdoors under Secure Aggregation**
-> Thi Thanh Van Nguyen, Vinh Thinh Le, Tran Thanh Lam Nguyen
+> Vinh Thinh Le, Tran Thanh Lam Nguyen
 > Submitted to *Mobile Networks and Applications* (Springer), topical collection *Trustworthy and Efficient
 > Time-Series Intelligence at the Mobile Edge*.
 
@@ -272,10 +272,10 @@ public data, and target no real system.
 ## 10. Citation
 
 ```bibtex
-@misc{nguyen2026burstguard,
+@misc{le2026burstguard,
   title  = {BurstGuard: Defending Federated Mobile-Traffic Forecasting against Burst-Triggered Backdoors
             under Secure Aggregation},
-  author = {Nguyen, Thi Thanh Van and Le, Vinh Thinh and Nguyen, Tran Thanh Lam},
+  author = {Le, Vinh Thinh and Nguyen, Tran Thanh Lam},
   year   = {2026},
   note   = {Submitted to Mobile Networks and Applications. Code: https://github.com/lamnguyentt92/burstguard-paper}
 }
